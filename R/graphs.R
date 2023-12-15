@@ -65,24 +65,20 @@ ggplot(df_reshaped, aes(x = Year, y = Value, fill = `RELAZIONE DELLA VITTIMA CON
 
 # suicides graph
 suicide_graph <- function() {
-  file_path <- './data/suicidi.xlsx'
-  data <- read_excel(file_path)
-  str(data)
-  # Create a line plot using ggplot2
-  ggplot(data, aes(x = Years)) +
-    geom_line(aes(y = Males, color = "Males"), size = 1) +
-    geom_line(aes(y = Females, color = "Females"), size = 1) +
-    geom_line(aes(y = `Males+Females`, color = "Males + Females"), size = 1) +
-    labs(title = "Suicides in Italy (1994-2015)",
-         x = "Years",
-         y = "Number of Suicides") +
-    scale_color_manual(values = c("Males" = "blue", "Females" = "red", "Males + Females" = "green")) +
+  # Read the data from the Excel file
+  file_path <- "./data/suicidi.xlsx"
+  df <- read_excel(file_path, skip = 2, sheet = 1)
+  
+  # Plotting
+  ggplot(df, aes(x = Years)) +
+    geom_line(aes(y = `Males`, color = "Males"), size = 1) +
+    geom_line(aes(y = `Females`, color = "Females"), size = 1) +
+    geom_line(aes(y = `Males+Females`, color = "Males+Females"), size = 1) +
+    labs(x = "Year", y = "Sucides", title = "Suicide Data Over Time 1994-2015, Italy") +
+    scale_color_manual(values = c("Males" = "blue", "Females" = "red", "Males+Females" = "purple")) +
     theme_minimal()
 }
 
-
-
-suicide_graph()
 
 
 
