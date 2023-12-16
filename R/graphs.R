@@ -3,12 +3,40 @@ library(readxl)
 library(readr)
 library(ggplot2)
 library(dplyr)
+library(countrycode)
 
-
-
-
-#male graph relationship with the victim trough the years
-# load the data from the first sheet of the Excel file
+translation_dict <- c(
+  "Repubblica Ceca" = "Czech Republic",
+  "Finlandia" = "Finland",
+  "Italia" = "Italy",
+  "Lituania" = "Lithuania",
+  "Paesi Bassi" = "Netherlands",
+  "Slovenia" = "Slovenia",
+  "Inghilterra e Galles" = "England and Wales",
+  "Scozia" = "Scotland",
+  "Irlanda del Nord" = "Northern Ireland",
+  "Austria" = "Austria",
+  "Croazia" = "Croatia",
+  "Francia" = "France",
+  "Germania" = "Germany",
+  "Grecia" = "Greece",
+  "Islanda" = "Iceland",
+  "Lettonia" = "Latvia",
+  "Liechtenstein" = "Liechtenstein",
+  "Lituania" = "Lithuania",
+  "Malta" = "Malta",
+  "Montenegro" = "Montenegro",
+  "Paesi Bassi" = "Netherlands",
+  "Repubblica Ceca" = "Czech Republic",
+  "Romania" = "Romania",
+  "Slovacchia" = "Slovakia",
+  "Slovenia" = "Slovenia",
+  "Spagna" = "Spain",
+  "Svezia" = "Sweden",
+  "Svizzera" = "Switzerland",
+  "Ungheria" = "Hungary",
+  "Unione Europea" = "European Union"
+)
 
 
 relationship_graph <- function(gender) {
@@ -66,14 +94,14 @@ suicide_graph <- function() {
   
   # Plotting
   ggplot(df, aes(x = Years)) +
-    geom_line(aes(y = `Males`, color = "Males"), size = 1) +
-    geom_line(aes(y = `Females`, color = "Females"), size = 1) +
-    geom_line(aes(y = `Males+Females`, color = "Males+Females"), size = 1) +
+    geom_line(aes(y = `Males`, color = "Males"), size = 1.5) +
+    geom_line(aes(y = `Females`, color = "Females"), size = 1.5) +
+    geom_line(aes(y = `Males+Females`, color = "Males+Females"), size = 1.5) +
     labs(x = "Year", y = "Sucides", title = "Suicide Data Over Time 1994-2015, Italy") +
     scale_color_manual(values = c("Males" = "blue", "Females" = "red", "Males+Females" = "purple")) +
     theme_minimal()
 }
-
+#suicide_graph()
 
 
 murders_europe_gender <- function(){
@@ -107,11 +135,15 @@ murders_europe_murderer <- function(gender, year){
   df_filtered <- df %>% 
     filter(Anno == year, `Unità` == "Valori per centomila abitanti", `Sesso della vittima` == gender, `Sesso della vittima` != "T")
   
+ 
+  # Translate country names
+  df_filtered$Nazione <- translation_dict[df_filtered$Nazione]
+  
   # Create a stacked bar plot based on the column "Omicida"
   ggplot(df_filtered, aes(x = Nazione, y = Omicidi, fill = Omicida)) +
     geom_bar(stat = "identity") +
     labs(x = "Country", y = paste("Number of", ifelse(gender == "F", "Female", "Male"), "Homicides"),
-         title = paste(ifelse(gender == "F", "Female", "Male"), "Homicides by Method and Country (", year, ", per 100,000 inhabitants)")) +
+         title = paste(ifelse(gender == "F", "Female", "Male"), "Homicides by Method and Country (", year, ", per 100.000 inhabitants)")) +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +  # Rotate x-axis labels
     scale_fill_manual(
@@ -119,9 +151,10 @@ murders_europe_murderer <- function(gender, year){
       name = "Method of Homicide",
       labels = c("Familiare" = "Family", "Altro" = "Other", "Partner" = "Partner", "Partner o Familiare" = "Partner or Family")
     ) + # Specify colors and legend title
-   ylim(0, 6)  # Set y-axis limits
+    ylim(0, 6)  # Set y-axis limits
 }
 
+murders_europe_murderer("M", 2021)
 
 
 
@@ -143,9 +176,65 @@ murders_time_series <- function() {
   
   # Create a time series plot with legend
   ggplot(df_summed, aes(x = Anno, y = Total_Murders, group = Nazione, color = Nazione)) +
-    geom_line() +
-    labs(x = "Year", y = "Total Murders", title = "Total Murders committed by Partner or Relative (2015-2021)") +
+    geom_line(size = 1.5) +
+    labs(x = "Year", y = "Total Murders", title = "Total Murders committed by Partner or Relative (2015-2021, per 100.000 inhabitants)") +
     theme_minimal() +
     theme(legend.position = "bottom") +  # Show legend at the bottom
     scale_color_manual(values = setNames(scales::hue_pal()(length(unique(df_summed$Nazione))), unique(df_summed$Nazione)))  # Set colors and legend names
 }
+
+murders_time_series()
+
+
+
+
+
+murders_map <- function(year) {
+  # Read the data from the CSV file
+  file_path <- "./data/dataset_eurostat.csv"
+  df <- read.csv(file_path, check.names = FALSE)  # Use check.names = FALSE to preserve column names
+  
+  # Filter rows for "Valori per centomila abitanti" and exclude rows where gender is "T" and select data for 2021
+  df_filtered <- df %>% 
+    filter(`Unità` == "Valori per centomila abitanti", `Sesso della vittima` != "T", Anno == year)
+  
+  # Group by country and year, then calculate the total murders
+  df_summed <- df_filtered %>%
+    group_by(Nazione) %>%
+    summarise(Total_Murders = sum(Omicidi))
+
+  
+  # Replace Italian names with English names in the df_summed data frame
+  df_summed$Nazione <- translation_dict[as.character(df_summed$Nazione)]
+  
+  # # Get world map data
+  world_map <- map_data("world")
+  
+  # Define bounding box coordinates for Europe
+  europe_bbox <- c(-20, 35, 40, 70)
+  
+  # Filter the world map data to include only European countries
+  europe_map_data <- subset(world_map, long >= europe_bbox[1] & long <= europe_bbox[3] & lat >= europe_bbox[2] & lat <= europe_bbox[4])
+  
+  # Merge with the total murders data
+  europe_map_data <- left_join(europe_map_data, df_summed, by = c("region" = "Nazione"))
+  
+  # Create a map with a red gradient for better category differentiation
+  ggplot(europe_map_data) +
+    geom_map(aes(map_id = region, fill = Total_Murders), map = europe_map_data, color = "grey") +
+    expand_limits(x = europe_map_data$long, y = europe_map_data$lat) +
+    scale_fill_gradientn(
+      colors = c("#fbeacb","#e6313d", "#a20f1f", "#321054"),
+      na.value = "white",
+      name = "Total Murders"
+    ) +
+    theme_void() +
+    labs(title = paste("Total Partner or Relatives committed Murders by Country (Europe),", year))
+}
+
+murders_map(2021)
+
+
+
+
+
