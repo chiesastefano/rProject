@@ -44,10 +44,10 @@ file_path <- './data/omicidi-relazione.xlsx'
 
 if (gender == 'male') {
   df <- readxl::read_excel(file_path, sheet = 2, skip = 2)
-  title <- "Total Number of Murderers by Relationship Type (2002-2021, Male Victim)"
+  title <- "Total Number of Murderers by Relationship Type (2002-2021, Male Victim, Italy)"
 } else {
   df <- readxl::read_excel(file_path, sheet = 3, skip = 2)
-  title <- "Total Number of Murderers by Relationship Type (2002-2021, Female Victim)"
+  title <- "Total Number of Murderers by Relationship Type (2002-2021, Female Victim, Italy)"
 }
 
 # remove the last row ("Total")
@@ -81,7 +81,7 @@ ggplot(df_reshaped, aes(x = Year, y = Value, fill = `RELAZIONE DELLA VITTIMA CON
   theme(legend.position = "top") + 
   guides(fill = guide_legend(title = "Relationship Type"))
 }
-
+relationship_graph('female')
 
 
 
@@ -101,7 +101,7 @@ suicide_graph <- function() {
     scale_color_manual(values = c("Males" = "blue", "Females" = "red", "Males+Females" = "purple")) +
     theme_minimal()
 }
-#suicide_graph()
+suicide_graph()
 
 
 murders_europe_gender <- function(){
@@ -121,7 +121,7 @@ murders_europe_gender <- function(){
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +  # Rotate x-axis labels
     scale_fill_manual(values = c("F" = "red", "M" = "blue"), name = "Gender of Victim")  # Specify colors and legend title
 }
-
+murders_europe_gender()
 
 
 
@@ -143,7 +143,7 @@ murders_europe_murderer <- function(gender, year){
   ggplot(df_filtered, aes(x = Nazione, y = Omicidi, fill = Omicida)) +
     geom_bar(stat = "identity") +
     labs(x = "Country", y = paste("Number of", ifelse(gender == "F", "Female", "Male"), "Homicides"),
-         title = paste(ifelse(gender == "F", "Female", "Male"), "Homicides by Method and Country (", year, ", per 100.000 inhabitants)")) +
+         title = paste(ifelse(gender == "F", "Female", "Male"), "Homicides by Relatives and Partner (", year, ", per 100.000 inhabitants)")) +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +  # Rotate x-axis labels
     scale_fill_manual(
