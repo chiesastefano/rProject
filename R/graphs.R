@@ -236,6 +236,24 @@ murders_map <- function(year) {
 murders_map(2021)
 
 
+suicide_attempts <- function(){
+  file_path <- "./data/suicidi.xlsx"
+  
+  # read the data from the Excel file
+  data <- read_excel(file_path, sheet = 7)
+  
+  # create a time series plot
+  ggplot(data, aes(x = Year)) +
+    geom_line(aes(y = M, color = "Male"), size = 1.2) +
+    geom_line(aes(y = F, color = "Female"), size = 1.2) +
+    geom_line(aes(y = MF, color = "Total"), size = 1.2) +
+    labs(title = "Suicide Attempts Over Time",
+         x = "Year",
+         y = "Number of Suicide Attempts",
+         color = "Gender") +
+    theme_minimal()
+}
+suicide_attempts()
 
 
 
