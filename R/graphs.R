@@ -40,59 +40,60 @@ translation_dict <- c(
 
 
 relationship_graph <- function(gender) {
-file_path <- './data/omicidi-relazione.xlsx'
-
-if (gender == 'male') {
-  df <- readxl::read_excel(file_path, sheet = 2, skip = 2)
-  title <- "Total Number of Murderers by Relationship Type (2002-2021, Male Victim, Italy)"
-} else {
-  df <- readxl::read_excel(file_path, sheet = 3, skip = 2)
-  title <- "Total Number of Murderers by Relationship Type (2002-2021, Female Victim, Italy)"
-}
-
-# remove the last row ("Total")
-df <- df[-nrow(df), ]
-
-# reshape the data using tidyr::gather
-df_reshaped <- df %>%
-  gather(key = "Year", value = "Value", -`RELAZIONE DELLA VITTIMA CON L'OMICIDA`)
-
-# calculate the total number of murderers for each relationship type
-totals <- df_reshaped %>%
-  group_by(`RELAZIONE DELLA VITTIMA CON L'OMICIDA`) %>%
-  summarise(Total = sum(Value)) %>%
-  arrange(Total)
-
-# Reorder the levels of the factor based on the totals
-df_reshaped$`RELAZIONE DELLA VITTIMA CON L'OMICIDA` <- 
-  fct_relevel(df_reshaped$`RELAZIONE DELLA VITTIMA CON L'OMICIDA`, totals$`RELAZIONE DELLA VITTIMA CON L'OMICIDA`)
-
-# convert Year to numeric for proper ordering
-df_reshaped$Year <- as.numeric(df_reshaped$Year)
-
-# create a bar plot using ggplot2
-ggplot(df_reshaped, aes(x = Year, y = Value, fill = `RELAZIONE DELLA VITTIMA CON L'OMICIDA`)) +
-  geom_bar(stat = "identity", position = "stack") +
-  labs(title = title,
-       x = "Year",
-       y = "Total Number",
-       fill = "Relationship Type") +
-  theme_minimal() +
-  theme(legend.position = "top") + 
-  guides(fill = guide_legend(title = "Relationship Type"))
+  file_path <- './data/omicidi-relazione.xlsx'
+  
+  if (gender == 'male') {
+    df <- readxl::read_excel(file_path, sheet = 2, skip = 2)
+    title <- "Total Number of Murderers by Relationship Type (2002-2021, Male Victim, Italy)"
+  } else {
+    df <- readxl::read_excel(file_path, sheet = 3, skip = 2)
+    title <- "Total Number of Murderers by Relationship Type (2002-2021, Female Victim, Italy)"
+  }
+  
+  # remove the last row ("Total")
+  df <- df[-nrow(df), ]
+  
+  # reshape the data using tidyr::gather
+  df_reshaped <- df %>%
+    gather(key = "Year", value = "Value", -`RELAZIONE DELLA VITTIMA CON L'OMICIDA`)
+  
+  # calculate the total number of murderers for each relationship type
+  totals <- df_reshaped %>%
+    group_by(`RELAZIONE DELLA VITTIMA CON L'OMICIDA`) %>%
+    summarise(Total = sum(Value)) %>%
+    arrange(Total)
+  
+  # reorder the levels of the factor based on the totals
+  #df_reshaped$`RELAZIONE DELLA VITTIMA CON L'OMICIDA` <- 
+    fct_relevel(df_reshaped$`RELAZIONE DELLA VITTIMA CON L'OMICIDA`, totals$`RELAZIONE DELLA VITTIMA CON L'OMICIDA`)
+  
+  # convert Year to numeric for proper ordering
+  df_reshaped$Year <- as.numeric(df_reshaped$Year)
+  
+  # create a bar plot using ggplot2 with fixed y-axis scale
+  ggplot(df_reshaped, aes(x = Year, y = Value, fill = `RELAZIONE DELLA VITTIMA CON L'OMICIDA`)) +
+    geom_bar(stat = "identity", position = "stack") +
+    labs(title = title,
+         x = "Year",
+         y = "Total Number",
+         fill = "Relationship Type") +
+    theme_minimal() +
+    theme(legend.position = "top") + 
+    guides(fill = guide_legend(title = "Relationship Type")) +
+    ylim(0, 600)  # Set the desired y-axis scale
 }
 relationship_graph('female')
-
+relationship_graph('male')
 
 
 
 # suicides graph
 suicide_graph <- function() {
-  # Read the data from the Excel file
+  # read the data from the Excel file
   file_path <- "./data/suicidi.xlsx"
   df <- read_excel(file_path, skip = 2, sheet = 1)
   
-  # Plotting
+  # plotting
   ggplot(df, aes(x = Years)) +
     geom_line(aes(y = `Males`, color = "Males"), size = 1.5) +
     geom_line(aes(y = `Females`, color = "Females"), size = 1.5) +
@@ -127,19 +128,19 @@ murders_europe_gender()
 
 
 murders_europe_murderer <- function(gender, year){
-  # Read the data from the CSV file
+  # read the data from the CSV file
   file_path <- "./data/dataset_eurostat.csv"
   df <- read_csv(file_path)
   
-  # Filter rows for the year 2021, "Valori per centomila abitanti", and only females
+  # filter rows for the year 2021, "Valori per centomila abitanti", and only females
   df_filtered <- df %>% 
     filter(Anno == year, `Unità` == "Valori per centomila abitanti", `Sesso della vittima` == gender, `Sesso della vittima` != "T")
   
  
-  # Translate country names
+  # translate country names
   df_filtered$Nazione <- translation_dict[df_filtered$Nazione]
   
-  # Create a stacked bar plot based on the column "Omicida"
+  # create a stacked bar plot based on the column "Omicida"
   ggplot(df_filtered, aes(x = Nazione, y = Omicidi, fill = Omicida)) +
     geom_bar(stat = "identity") +
     labs(x = "Country", y = paste("Number of", ifelse(gender == "F", "Female", "Male"), "Homicides"),
@@ -149,32 +150,32 @@ murders_europe_murderer <- function(gender, year){
     scale_fill_manual(
       values = c("Familiare" = "red", "Altro" = "blue", "Partner" = "green", "Partner o familiare" = "purple"),
       name = "Method of Homicide",
-      labels = c("Familiare" = "Family", "Altro" = "Other", "Partner" = "Partner", "Partner o Familiare" = "Partner or Family")
-    ) + # Specify colors and legend title
+      labels = c("Familiare" = "Family", "Altro" = "Other", "Partner" = "Partner", "Partner o familiare" = "Partner or Family")
+    ) + # specify colors and legend title
     ylim(0, 6)  # Set y-axis limits
 }
 
-murders_europe_murderer("M", 2021)
+murders_europe_murderer("F", 2021)
 
 
 
 murders_time_series <- function() {
-  # Read the data from the CSV file
+  # read the data from the CSV file
   file_path <- "./data/dataset_eurostat.csv"
   df <- read_csv(file_path)
   
-  # Filter rows for "Valori per centomila abitanti" and exclude rows where gender is "T"
+  # filter rows for "Valori per centomila abitanti" and exclude rows where gender is "T"
   df_filtered <- df %>% 
     filter(`Unità` == "Valori per centomila abitanti", `Sesso della vittima` != "T")
   
-  # Filter specific countries (Italia and Unione europea) and years post-2015
+  # filter specific countries (Italia and Unione europea) and years post-2015
   countries_to_include <- c("Italia", "Unione Europea")
   df_summed <- df_filtered %>%
     filter(Nazione %in% countries_to_include, Anno >= 2015) %>%
     group_by(Nazione, Anno) %>%
     summarise(Total_Murders = sum(Omicidi))
   
-  # Create a time series plot with legend
+  # create a time series plot with legend
   ggplot(df_summed, aes(x = Anno, y = Total_Murders, group = Nazione, color = Nazione)) +
     geom_line(size = 1.5) +
     labs(x = "Year", y = "Total Murders", title = "Total Murders committed by Partner or Relative (2015-2021, per 100.000 inhabitants)") +
@@ -190,36 +191,36 @@ murders_time_series()
 
 
 murders_map <- function(year) {
-  # Read the data from the CSV file
+  # read the data from the CSV file
   file_path <- "./data/dataset_eurostat.csv"
   df <- read.csv(file_path, check.names = FALSE)  # Use check.names = FALSE to preserve column names
   
-  # Filter rows for "Valori per centomila abitanti" and exclude rows where gender is "T" and select data for 2021
+  # filter rows for "Valori per centomila abitanti" and exclude rows where gender is "T" and select data for 2021
   df_filtered <- df %>% 
     filter(`Unità` == "Valori per centomila abitanti", `Sesso della vittima` != "T", Anno == year)
   
-  # Group by country and year, then calculate the total murders
+  # group by country and year, then calculate the total murders
   df_summed <- df_filtered %>%
     group_by(Nazione) %>%
     summarise(Total_Murders = sum(Omicidi))
 
   
-  # Replace Italian names with English names in the df_summed data frame
+  # replace Italian names with English names in the df_summed data frame
   df_summed$Nazione <- translation_dict[as.character(df_summed$Nazione)]
   
-  # # Get world map data
+  # get world map data
   world_map <- map_data("world")
   
-  # Define bounding box coordinates for Europe
+  # define bounding box coordinates for Europe
   europe_bbox <- c(-20, 35, 40, 70)
   
-  # Filter the world map data to include only European countries
+  # filter the world map data to include only European countries
   europe_map_data <- subset(world_map, long >= europe_bbox[1] & long <= europe_bbox[3] & lat >= europe_bbox[2] & lat <= europe_bbox[4])
   
-  # Merge with the total murders data
+  # merge with the total murders data
   europe_map_data <- left_join(europe_map_data, df_summed, by = c("region" = "Nazione"))
   
-  # Create a map with a red gradient for better category differentiation
+  # create a map with a red gradient for better category differentiation
   ggplot(europe_map_data) +
     geom_map(aes(map_id = region, fill = Total_Murders), map = europe_map_data, color = "grey") +
     expand_limits(x = europe_map_data$long, y = europe_map_data$lat) +
@@ -229,7 +230,7 @@ murders_map <- function(year) {
       name = "Total Murders"
     ) +
     theme_void() +
-    labs(title = paste("Total Partner or Relatives committed Murders by Country (Europe),", year))
+    labs(title = paste("Total Partner or Relatives committed Murders by Country (Europe, per 100,000 inhabitants),", year))
 }
 
 murders_map(2021)
