@@ -5,6 +5,8 @@ library(ggplot2)
 library(dplyr)
 library(countrycode)
 
+
+# map every european country in the dataset and assign the corresponding english name
 translation_dict <- c(
   "Repubblica Ceca" = "Czech Republic",
   "Finlandia" = "Finland",
@@ -106,21 +108,21 @@ suicide_graph()
 
 
 murders_europe_gender <- function(){
-  # Read the data from the CSV file
+  # read the data from the CSV file
   file_path <- "./data/dataset_eurostat.csv"
   df <- read_csv(file_path)
   
-  # Filter rows for the year 2021 and "Valori per centomila abitanti"
+  # filter rows for the year 2021 and "Valori per centomila abitanti"
   df_filtered <- df %>% 
     filter(Anno == 2021, `Unità` == "Valori per centomila abitanti", `Sesso della vittima` != "T")
   
-  # Create a stacked bar plot
+  # create a stacked bar plot
   ggplot(df_filtered, aes(x = Nazione, y = Omicidi, fill = `Sesso della vittima`)) +
     geom_bar(stat = "identity") +
     labs(x = "Country", y = "Number of Homicides", title = "Homicides by Gender and Country (2021, per 100,000 inhabitants)") +
     theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +  # Rotate x-axis labels
-    scale_fill_manual(values = c("F" = "red", "M" = "blue"), name = "Gender of Victim")  # Specify colors and legend title
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +  # rotate x-axis labels
+    scale_fill_manual(values = c("F" = "red", "M" = "blue"), name = "Gender of Victim")  # specify colors and legend title
 }
 murders_europe_gender()
 
@@ -168,7 +170,7 @@ murders_time_series <- function() {
   df_filtered <- df %>% 
     filter(`Unità` == "Valori per centomila abitanti", `Sesso della vittima` != "T")
   
-  # filter specific countries (Italia and Unione europea) and years post-2015
+  # filter specific countries (Italy and European union) and years post-2015
   countries_to_include <- c("Italia", "Unione Europea")
   df_summed <- df_filtered %>%
     filter(Nazione %in% countries_to_include, Anno >= 2015) %>%
@@ -180,8 +182,8 @@ murders_time_series <- function() {
     geom_line(size = 1.5) +
     labs(x = "Year", y = "Total Murders", title = "Total Murders committed by Partner or Relative (2015-2021, per 100.000 inhabitants)") +
     theme_minimal() +
-    theme(legend.position = "bottom") +  # Show legend at the bottom
-    scale_color_manual(values = setNames(scales::hue_pal()(length(unique(df_summed$Nazione))), unique(df_summed$Nazione)))  # Set colors and legend names
+    theme(legend.position = "bottom") +  # show legend at the bottom
+    scale_color_manual(values = setNames(scales::hue_pal()(length(unique(df_summed$Nazione))), unique(df_summed$Nazione)))  # set colors and legend names
 }
 
 murders_time_series()
@@ -236,18 +238,18 @@ murders_map <- function(year) {
 murders_map(2021)
 
 
-suicide_attempts <- function(){
+suicide_attempts <- function() {
   file_path <- "./data/suicidi.xlsx"
   
-  # read the data from the Excel file
-  data <- read_excel(file_path, sheet = 7)
-  
+  # read the data from the Excel file, skipping 2 rows (assuming there is a header)
+  data <- read_excel(file_path, sheet = 8, skip = 1)
+
   # create a time series plot
-  ggplot(data, aes(x = Year)) +
-    geom_line(aes(y = M, color = "Male"), size = 1.2) +
-    geom_line(aes(y = F, color = "Female"), size = 1.2) +
-    geom_line(aes(y = MF, color = "Total"), size = 1.2) +
-    labs(title = "Suicide Attempts Over Time",
+  ggplot(data, aes(x = `Year`)) +
+    geom_line(aes(y = `M`, color = "Male"), size = 1.2) +
+    geom_line(aes(y = `F`, color = "Female"), size = 1.2) +
+    geom_line(aes(y = `MF`, color = "Total"), size = 1.2) +
+    labs(title = "Suicide Attempts Over Time 2003- 2010, Italy",
          x = "Year",
          y = "Number of Suicide Attempts",
          color = "Gender") +
